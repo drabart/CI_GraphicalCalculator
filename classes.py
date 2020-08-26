@@ -21,6 +21,7 @@ class Screen:
         # lower priority, the faster it renders and lower in layers it becomes
         objects.sort(key=lambda x: x.priority)
         for obj in objects:
+            # obj.mouseOver()
             obj.render(self.screen, deltaTime)
 
 
@@ -28,16 +29,31 @@ class Entity:
     def __init__(self, positionX, positionY, width, height):
         self.x, self.y = positionX, positionY
         self.w, self.h = width, height
+        self.rect = pg.Rect(positionX, positionY, width, height)
+
+        self.clicked = False
+
+    def mouseOver(self):
+        mx, my = pg.mouse.get_pos()
+
+        if self.rect.top <= my <= self.rect.bottom and self.rect.left <= mx <= self.rect.right:
+            return True
+
+    def move(self, x, y):
+        self.x += x
+        self.y += y
+        self.rect.x += x
+        self.rect.y += y
 
 
 class TexturedObject(Entity):
     def __init__(self, positionX, positionY, texturePath, name, priority=0):
         self.texture = pg.image.load(texturePath)
 
-        self.rect = self.texture.get_rect()
-        self.rect.x += positionX
-        self.rect.y += positionY
-        super().__init__(positionX, positionY, self.rect.width, self.rect.height)
+        rect = self.texture.get_rect()
+        rect.x += positionX
+        rect.y += positionY
+        super().__init__(positionX, positionY, rect.width, rect.height)
 
         self.name = name
 
@@ -51,9 +67,10 @@ class Node(Entity):
     minScale = 0.0
     maxScale = 100.0
 
-    def __init__(self, positionX, positionY, radius, nodeType, structureID, priority=0, startValue=0):
-        super().__init__(positionX, positionY, 0, 0)
+    def __init__(self, positionX, positionY, radius, nodeType, structureID, nodeID, priority=0, startValue=100):
+        super().__init__(positionX-radius, positionY-radius, positionX+radius, positionY+radius)
 
+        self.id = nodeID
         self.r = radius
 
         self.type = nodeType
@@ -62,6 +79,7 @@ class Node(Entity):
         self.color = 0, 0, 0
 
         self.v = startValue
+        self.d = False
 
         self.priority = priority
 
@@ -90,4 +108,4 @@ class Node(Entity):
 
     def render(self, screen, deltaTime):
         self.update()
-        pg.draw.circle(screen, self.color, (self.x, self.y), self.r)
+        pg.draw.circle(screen, self.color, (self.x+self.r, self.y+self.r), self.r)
