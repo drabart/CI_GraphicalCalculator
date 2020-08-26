@@ -16,6 +16,7 @@ TODO list
 
 pg.init()
 scr = Screen(800, 600, (0, 0, 0))
+
 clock = pg.time.Clock()
 objectArr = []
 
