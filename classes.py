@@ -8,6 +8,10 @@ class Screen:
         self.screen = pg.display.set_mode(self.size)
         self.background = background
 
+        self.icon = pg.image.load("graphics/icon.png")
+        pg.display.set_icon(self.icon)
+        pg.display.set_caption("Critical Infrastructure Calculator")
+
     def update(self, objects, deltaTime):
         self.screen.fill(self.background)
         self.render(objects, deltaTime)
