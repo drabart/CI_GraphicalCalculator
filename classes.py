@@ -35,6 +35,7 @@ class Entity:
 
     def mouseOver(self):
         mx, my = pg.mouse.get_pos()
+        #  print(mx, my)
 
         if self.rect.top <= my <= self.rect.bottom and self.rect.left <= mx <= self.rect.right:
             return True
@@ -68,7 +69,7 @@ class Node(Entity):
     maxScale = 100.0
 
     def __init__(self, positionX, positionY, radius, nodeType, structureID, nodeID, priority=0, startValue=100):
-        super().__init__(positionX-radius, positionY-radius, positionX+radius, positionY+radius)
+        super().__init__(positionX-radius, positionY-radius, radius*2, radius*2)
 
         self.id = nodeID
         self.r = radius
@@ -109,3 +110,19 @@ class Node(Entity):
     def render(self, screen, deltaTime):
         self.update()
         pg.draw.circle(screen, self.color, (self.x+self.r, self.y+self.r), self.r)
+
+
+class Line:
+    def __init__(self, x1, y1, x2, y2, color, width=1):
+        self.p = []
+        self.p.append((x1, y1))
+        self.p.append((x2, y2))
+
+        self.w = width
+
+        self.color = color
+
+        self.priority = -1
+
+    def render(self, screen, deltaTime):
+        pg.draw.line(screen, self.color, self.p[0], self.p[1], self.w)

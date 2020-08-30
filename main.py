@@ -31,6 +31,7 @@ def loadNodes(file):
                 arr.append(Node(obj[0], obj[1], r, t, obj[3], obj[3], obj[4], obj[5]))
             except IndexError:
                 arr.append(Node(obj[0], obj[1], r, t, obj[3], obj[3], obj[4]))
+        obj = 0
         del obj
 
     return arr
@@ -62,15 +63,19 @@ def main():
     objectArr = []
 
     objectArr += loadMenu()
-    objectArr += loadNodes('save1.json')
+    n = loadNodes('save1.json')
+    if n:
+        objectArr += n
 
     mx, my = -1, -1
     dmx, dmy = 0, 0
     SCI = 0
     nodeCount = [0]
-    draggedNode = (-1, -1, -1)
+    draggedNode = (-1, -1, -1)  # type, structure, id
     rButtonDown = False
     skipMove = False
+    skipConnect = False
+    selectedNode = (-1, -1, -1, -1, -1)  # type, structure, id, x, y
 
     while 1:
         moved = False
@@ -104,34 +109,53 @@ def main():
             dmy = 0
 
         skipMove = False
+        skipConnect = False
 
         for obj in objectArr:
             try:
                 if obj.d and draggedNode == (-1, -1, -1):
                     obj.d = False
+                    selectedNode = (-1, -1, -1, -1, -1)
+                    #  print(obj.x, obj.y)
                 elif obj.d:
                     obj.move(dmx, dmy)
             except AttributeError:
                 pass
 
-            if obj.mouseOver() and rButtonDown:
-                obj.clicked = True
-            else:
-                obj.clicked = False
+            try:
+                if obj.mouseOver() and rButtonDown and draggedNode == (-1, -1, -1):
+                    obj.clicked = True
+                elif not (obj.mouseOver() and rButtonDown):
+                    obj.clicked = False
+            except AttributeError:
+                pass
 
             try:
                 if obj.name == 'Add_node' and obj.clicked and draggedNode == (-1, -1, -1):
                     pg.mouse.set_pos(475, 360)
                     newNode = Node(475, 360, 12, BASE_NODE_STR, SCI, nodeCount[SCI])
+                    #  print((475, 360, 12, BASE_NODE_STR, SCI, nodeCount[SCI]))
                     objectArr.append(newNode)
                     newNode.d = True
                     draggedNode = (0, SCI, nodeCount[SCI])
                     nodeCount[SCI] += 1
                     skipMove = True
-
             except AttributeError:
                 pass
 
+            if not skipConnect:
+                try:
+                    if obj.type == BASE_NODE_STR and obj.clicked and selectedNode == (-1, -1, -1, -1, -1):
+                        selectedNode = (0, obj.strID, obj.id, obj.x, obj.y)
+                        #  print(selectedNode)
+                    elif obj.type == BASE_NODE_STR and obj.clicked and selectedNode != (0, obj.strID, obj.id, obj.x, obj.y):
+                        objectArr.append(Line(selectedNode[3]+obj.r, selectedNode[4]+obj.r, obj.x+obj.r, obj.y+obj.r, (0, 0, 0), 5))
+                        selectedNode = (-1, -1, -1, -1, -1)
+                        skipConnect = True
+                        #  print(selectedNode)
+                except AttributeError:
+                    pass
+        #  print()
         dt = clock.tick(60)
         scr.update(objectArr, dt)
 
