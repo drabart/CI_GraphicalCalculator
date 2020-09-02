@@ -62,6 +62,8 @@ def main():
     clock = pg.time.Clock()
     objectArr = []
 
+    objectArr.append(InputBox(260, 50, 50, 50, text='lorem ipsum'))
+
     objectArr += loadMenu()
     n = loadNodes('save1.json')
     if n:
@@ -70,12 +72,18 @@ def main():
     mx, my = -1, -1
     dmx, dmy = 0, 0
     SCI = 0
+
     nodeCount = [0]
+
     draggedNode = (-1, -1, -1)  # type, structure, id
+    selectedNode = (-1, -1, -1, -1, -1)  # type, structure, id, x, y
+
+    selectedInput = False
     rButtonDown = False
     skipMove = False
-    skipConnect = False
-    selectedNode = (-1, -1, -1, -1, -1)  # type, structure, id, x, y
+    updatedText = False
+
+    currentText = ''
 
     while 1:
         moved = False
@@ -103,6 +111,15 @@ def main():
                 dmy = y - my
                 mx, my = x, y
                 moved = True
+            if event.type == pg.KEYDOWN:
+                if selectedInput:
+                    if event.key == pg.K_RETURN:
+                        currentText = ''
+                    elif event.key == pg.K_BACKSPACE:
+                        currentText = currentText[:-1]
+                    else:
+                        currentText += event.unicode
+                    updatedText = True
 
         if not moved or skipMove:
             dmx = 0
@@ -122,11 +139,38 @@ def main():
             except AttributeError:
                 pass
 
+            if updatedText:
+                try:
+                    if obj.textTexture and obj.clicked:
+                        obj.textUpdate(currentText)
+                        updatedText = False
+                except AttributeError:
+                    pass
+
             try:
-                if obj.mouseOver() and rButtonDown and draggedNode == (-1, -1, -1):
-                    obj.clicked = True
+                if not obj.mouseOver() and rButtonDown:
+                    try:
+                        if obj.textTexture and selectedInput:
+                            selectedInput = False
+                            obj.clicked = False
+                    except AttributeError:
+                        pass
+                if obj.mouseOver() and rButtonDown:
+                    try:
+                        if obj.textTexture and not selectedInput:
+                            obj.clicked = True
+                            currentText = obj.text
+                            selectedInput = True
+                    except AttributeError:
+                        pass
+                    if draggedNode == (-1, -1, -1):
+                        obj.clicked = True
                 elif not (obj.mouseOver() and rButtonDown):
-                    obj.clicked = False
+                    try:
+                        if obj.textTexture:
+                            pass
+                    except AttributeError:
+                        obj.clicked = False
             except AttributeError:
                 pass
 

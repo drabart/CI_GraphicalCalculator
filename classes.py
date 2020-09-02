@@ -126,3 +126,31 @@ class Line:
 
     def render(self, screen, deltaTime):
         pg.draw.line(screen, self.color, self.p[0], self.p[1], self.w)
+
+
+class InputBox(Entity):
+    def __init__(self, positionX, positionY, width, height, color=(0, 0, 0), text='', font=None, priority=101):
+        super().__init__(positionX, positionY, width, height)
+
+        self.font = pg.font.Font(font, 32)
+        self.text = ''
+        self.textTexture = None
+        self.color = color
+
+        self.clicked = False
+
+        self.textUpdate(text)
+
+        self.priority = priority
+
+    def textUpdate(self, newText):
+        self.text = newText
+        self.textTexture = self.font.render(self.text, True, self.color)
+        self.w = max(200, self.textTexture.get_width() + 10)
+        self.rect.w = self.w
+
+    def render(self, screen, deltaTime):
+        pg.draw.rect(screen, (255, 255, 255), self.rect)
+        screen.blit(self.textTexture, (self.x + 5, self.y + 5))
+        pg.draw.rect(screen, self.color, self.rect, 2)
+
