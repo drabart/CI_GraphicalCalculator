@@ -22,7 +22,8 @@ class Screen:
         objects.sort(key=lambda x: x.priority)
         for obj in objects:
             # obj.mouseOver()
-            obj.render(self.screen, deltaTime)
+            if not obj.hide:
+                obj.render(self.screen, deltaTime)
 
 
 class Entity:
@@ -32,6 +33,8 @@ class Entity:
         self.rect = pg.Rect(positionX, positionY, width, height)
 
         self.clicked = False
+
+        self.hide = False
 
     def mouseOver(self):
         mx, my = pg.mouse.get_pos()
@@ -68,14 +71,13 @@ class Node(Entity):
     minScale = 0.0
     maxScale = 100.0
 
-    def __init__(self, positionX, positionY, radius, nodeType, structureID, nodeID, priority=0, startValue=100):
+    def __init__(self, positionX, positionY, radius, nodeType, nodeID, priority=0, startValue=100):
         super().__init__(positionX-radius, positionY-radius, radius*2, radius*2)
 
         self.id = nodeID
         self.r = radius
 
         self.type = nodeType
-        self.strID = structureID
 
         self.color = 0, 0, 0
 
@@ -122,6 +124,7 @@ class Line:
 
         self.color = color
 
+        self.hide = False
         self.priority = -1
 
     def render(self, screen, deltaTime):
@@ -153,4 +156,3 @@ class InputBox(Entity):
         pg.draw.rect(screen, (255, 255, 255), self.rect)
         screen.blit(self.textTexture, (self.x + 5, self.y + 5))
         pg.draw.rect(screen, self.color, self.rect, 2)
-

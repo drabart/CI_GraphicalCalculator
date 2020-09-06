@@ -1,8 +1,1 @@
-{
-  "nodes": [
-
-  ],
-  "connections": [
-
-  ]
-}
+{"nodes": [[386, 193, "baseNode", 1, 100], [591, 199, "baseNode", 2, 100], [478, 408, "baseNode", 3, 100]], "connections": [[2, 1]]}
