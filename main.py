@@ -1,5 +1,4 @@
 
-
 import json
 
 from classes import *
@@ -38,9 +37,9 @@ def loadNodes(file):
             del obj
 
         for conn in rawObjects['connections']:
-            a = arr[conn[0]-1]
-            b = arr[conn[1]-1]
-            arr.append(Line(a.x+a.r, a.y+a.r, b.x+b.r, b.y+b.r, (0, 0, 0), 5))
+            a = arr[conn[0] - 1]
+            b = arr[conn[1] - 1]
+            arr.append(Line(a.x + a.r, a.y + a.r, b.x + b.r, b.y + b.r, (0, 0, 0), 5))
 
     return arr
 
@@ -62,6 +61,24 @@ def loadMenu():
         del obj
 
     return arr
+
+
+visited = {}
+
+
+def ss(w, c, i, oa):
+    global visited
+    visited[w] = True
+    for ob in oa:
+        if type(ob) == Node and ob.type == BASE_NODE_STR and ob.id == w:
+            ob.ci = i
+    if c[w]:
+        for a in c[w]:
+            try:
+                if visited[a]:
+                    pass
+            except KeyError:
+                ss(a, c, i, oa)
 
 
 def main():
@@ -91,11 +108,18 @@ def main():
     rButtonDown = False
     skipMove = False
     updatedText = False
+    editedGraph = False
 
     currentText = ''
     ib = InputBox(270, 70, 100, 30)
     ib.hide = True
     objectArr.append(ib)
+    nt = Text(255, 5, text='Selected Node: ')
+    nt.hide = True
+    menuArr.append(nt)
+    cit = Text(255, 48, text='Node CI: ', size=32)
+    cit.hide = True
+    menuArr.append(cit)
 
     while 1:
         moved = False
@@ -110,6 +134,7 @@ def main():
                     rButtonDown = False
                 if draggedNode != (-1, -1):
                     draggedNode = (-1, -1)
+                    editedGraph = True
             if eve.type == MOUSEMOTION:
                 x, y = eve.pos
                 if draggedNode != (-1, -1):
@@ -172,6 +197,12 @@ def main():
                 if obj.d and draggedNode == (-1, -1):
                     obj.d = False
                     selectedNode = (-1, -1, -1, -1)
+                    ib.hide = True
+                    nt.hide = True
+                    cit.hide = True
+                    for ob in menuArr:
+                        if type(ob) == TexturedObject and ob.name == 'Title':
+                            ob.hide = False
                 #  moving dragged node
                 elif obj.d:
                     obj.move(dmx, dmy)
@@ -185,19 +216,30 @@ def main():
                     if obj.type == BASE_NODE_STR and obj.clicked and selectedNode == (-1, -1, -1, -1):
                         selectedNode = (0, obj.id, obj.x, obj.y)
                         ib.hide = False
+                        nt.textUpdate('Selected Node: ' + str(obj.id))
+                        nt.hide = False
+                        cit.textUpdate('Node CI: ' + str(obj.ci))
+                        cit.hide = False
                         for ob in menuArr:
                             if type(ob) == TexturedObject and ob.name == 'Title':
                                 ob.hide = True
+
                     #  If node is selected and current clicked node is not that one then connects
                     elif obj.type == BASE_NODE_STR and obj.clicked and selectedNode != (0, obj.id, obj.x, obj.y):
                         if obj.id not in connections[selectedNode[1]]:
-                            objectArr.append(Line(selectedNode[2]+obj.r, selectedNode[3]+obj.r, obj.x+obj.r, obj.y+obj.r, (0, 0, 0), 5))
+                            objectArr.append(Line(selectedNode[2] + obj.r, selectedNode[3] + obj.r, obj.x + obj.r, obj.y + obj.r, (0, 0, 0), 5))
                             skipConnect = True
                             connections[selectedNode[1]].append(obj.id)
                             connections[obj.id].append(selectedNode[1])
                             connectionsList.append([obj.id, selectedNode[1]])
-                            print(connectionsList)
                             selectedNode = (-1, -1, -1, -1)
+                            ib.hide = True
+                            nt.hide = True
+                            cit.hide = True
+                            for ob in menuArr:
+                                if type(ob) == TexturedObject and ob.name == 'Title':
+                                    ob.hide = False
+                            editedGraph = True
                 except AttributeError:
                     pass
 
@@ -217,6 +259,16 @@ def main():
                     skipMove = True
                     connections.append([])
                     ID += 1
+
+            #  Deselect node
+            if type(obj) == TexturedObject and obj.name == 'Deselect' and obj.clicked:
+                selectedNode = (-1, -1, -1, -1)
+                ib.hide = True
+                nt.hide = True
+                cit.hide = True
+                for ob in menuArr:
+                    if type(ob) == TexturedObject and ob.name == 'Title':
+                        ob.hide = False
 
             #  Text
             #  Updates currently selected text
@@ -249,9 +301,22 @@ def main():
             except AttributeError:
                 pass
 
+        if editedGraph:
+            global visited
+            it = 1
+            for x in range(1, ID):
+                try:
+                    if visited[x]:
+                        pass
+                except KeyError:
+                    ss(x, connections, it, objectArr)
+                    it += 1
+            visited = {}
+            editedGraph = False
+
         #  Updating screen
         dt = clock.tick(60)
-        scr.update(menuArr+objectArr, dt)
+        scr.update(menuArr + objectArr, dt)
 
 
 if __name__ == '__main__':

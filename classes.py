@@ -75,6 +75,7 @@ class Node(Entity):
         super().__init__(positionX-radius, positionY-radius, radius*2, radius*2)
 
         self.id = nodeID
+        self.ci = self.id
         self.r = radius
 
         self.type = nodeType
@@ -156,3 +157,28 @@ class InputBox(Entity):
         pg.draw.rect(screen, (255, 255, 255), self.rect)
         screen.blit(self.textTexture, (self.x + 5, self.y + 5))
         pg.draw.rect(screen, self.color, self.rect, 2)
+
+
+class Text(Entity):
+    def __init__(self, positionX, positionY, size=48, color=(0, 0, 0), text='', font=None, priority=101):
+        self.font = pg.font.Font(font, size)
+        self.text = text
+        self.color = color
+        self.textTexture = self.font.render(self.text, True, self.color)
+
+        self.name = ''
+        self.clicked = False
+
+        rect = self.textTexture.get_rect()
+        rect.x += positionX
+        rect.y += positionY
+        super().__init__(positionX, positionY, rect.width, rect.height)
+
+        self.priority = priority
+
+    def textUpdate(self, newText):
+        self.text = newText
+        self.textTexture = self.font.render(self.text, True, self.color)
+
+    def render(self, screen, deltaTime):
+        screen.blit(self.textTexture, (self.x, self.y))
