@@ -1,10 +1,10 @@
-
 import json
 
 from classes import *
 from constants import *
 from pygame import *
 from sys import exit
+from copy import deepcopy
 
 '''
 TODO list
@@ -97,11 +97,21 @@ def main():
     connections = [[]]
     connectionsList = []
 
+    Wconnections = [[]]
+    WconnectionsList = []
+
     mx, my = -1, -1
     dmx, dmy = 0, 0
     ID = 1
+    WID = 1
+    pastDepthUpdate = time.get_ticks()
+    pastWeatherUpdate = time.get_ticks()
+    currentConnection = 0
+    weatherNode = 0
+    depth = 1
 
     draggedNode = (-1, -1)  # type, id
+    startWeatherNode = (-1, -1)  # type, id
     selectedNode = (-1, -1, -1, -1)  # type, id, x, y
 
     selectedInput = False
@@ -109,9 +119,10 @@ def main():
     skipMove = False
     updatedText = False
     editedGraph = False
+    addingWeather = False
 
     currentText = ''
-    ib = InputBox(270, 70, 100, 30)
+    ib = InputBox(565, 78, 100, 30)
     ib.hide = True
     objectArr.append(ib)
     nt = Text(255, 5, text='Selected Node: ')
@@ -120,6 +131,11 @@ def main():
     cit = Text(255, 48, text='Node CI: ', size=32)
     cit.hide = True
     menuArr.append(cit)
+    cin = Text(255, 83, text='Node lifetime in safety states', size=32)
+    cin.hide = True
+    menuArr.append(cin)
+    dph = Text(255, 127, text='Depth: 1', size=32)
+    menuArr.append(dph)
 
     while 1:
         moved = False
@@ -137,7 +153,7 @@ def main():
                     editedGraph = True
             if eve.type == MOUSEMOTION:
                 x, y = eve.pos
-                if draggedNode != (-1, -1):
+                if draggedNode != (-1, -1) or addingWeather:
                     if eve.pos[0] < 250:
                         x = 250
                     if eve.pos[1] < 120:
@@ -165,49 +181,53 @@ def main():
         skipMove = False
         skipConnect = False
 
-        for obj in menuArr+objectArr:
+        for obj in menuArr + objectArr:
             #  Click check
-            try:
-                #  Check for 'InputBoxes' to be unselected
-                if not obj.mouseOver() and rButtonDown:
-                    if type(obj) == InputBox and selectedInput:
-                        selectedInput = False
+            if not addingWeather:
+                try:
+                    #  Check for 'InputBoxes' to be unselected
+                    if not obj.mouseOver() and rButtonDown:
+                        if type(obj) == InputBox and selectedInput:
+                            selectedInput = False
+                            obj.clicked = False
+                    #  Check if object is being clicked
+                    if obj.mouseOver() and rButtonDown:
+                        #  Set objects clicked only if no items are added
+                        if draggedNode == (-1, -1):
+                            #  Selecting input box
+                            if type(obj) == InputBox and not selectedInput:
+                                obj.clicked = True
+                                currentText = obj.text
+                                selectedInput = True
+                            else:
+                                obj.clicked = True
+                    #  'unclicking' object if it is not 'InputBox'
+                    elif not (obj.mouseOver() and rButtonDown) and type(obj) != InputBox:
                         obj.clicked = False
-                #  Check if object is being clicked
-                if obj.mouseOver() and rButtonDown:
-                    #  Set objects clicked only if no items are added
-                    if draggedNode == (-1, -1):
-                        #  Selecting input box
-                        if type(obj) == InputBox and not selectedInput:
-                            obj.clicked = True
-                            currentText = obj.text
-                            selectedInput = True
-                        else:
-                            obj.clicked = True
-                #  'unclicking' object if it is not 'InputBox'
-                elif not (obj.mouseOver() and rButtonDown) and type(obj) != InputBox:
-                    obj.clicked = False
-            except AttributeError:
-                pass
+                except AttributeError:
+                    pass
 
+            #  ------------------------------------
             #  Nodes
             #  Handling dragged node
-            try:
-                #  'undragging' dragged node
-                if obj.d and draggedNode == (-1, -1):
-                    obj.d = False
-                    selectedNode = (-1, -1, -1, -1)
-                    ib.hide = True
-                    nt.hide = True
-                    cit.hide = True
-                    for ob in menuArr:
-                        if type(ob) == TexturedObject and ob.name == 'Title':
-                            ob.hide = False
-                #  moving dragged node
-                elif obj.d:
-                    obj.move(dmx, dmy)
-            except AttributeError:
-                pass
+            if not addingWeather:
+                try:
+                    #  'undragging' dragged node
+                    if obj.d and draggedNode == (-1, -1):
+                        obj.d = False
+                        selectedNode = (-1, -1, -1, -1)
+                        ib.hide = True
+                        nt.hide = True
+                        cit.hide = True
+                        cin.hide = True
+                        for ob in menuArr:
+                            if type(ob) == TexturedObject and ob.name == 'Title':
+                                ob.hide = False
+                    #  moving dragged node
+                    elif obj.d:
+                        obj.move(dmx, dmy)
+                except AttributeError:
+                    pass
 
             #  Connecting nodes
             if not skipConnect:
@@ -220,6 +240,7 @@ def main():
                         nt.hide = False
                         cit.textUpdate('Node CI: ' + str(obj.ci))
                         cit.hide = False
+                        cin.hide = False
                         for ob in menuArr:
                             if type(ob) == TexturedObject and ob.name == 'Title':
                                 ob.hide = True
@@ -236,6 +257,7 @@ def main():
                             ib.hide = True
                             nt.hide = True
                             cit.hide = True
+                            cin.hide = True
                             for ob in menuArr:
                                 if type(ob) == TexturedObject and ob.name == 'Title':
                                     ob.hide = False
@@ -260,15 +282,100 @@ def main():
                     connections.append([])
                     ID += 1
 
+            #  -------------------------------------
+            #  Adding weather process
+            #  Moving node
+            if addingWeather and type(obj) == Node and obj.d and obj.type == PROCESS_NODE_STR:
+                obj.move(dmx, dmy)
+                if currentConnection != 0:
+                    currentConnection.p[1][0] += dmx
+                    currentConnection.p[1][1] += dmy
+
+            #  Adding first
+            if not addingWeather:
+                if type(obj) == TexturedObject:
+                    #  Checking if 'Add_process' button is clicked
+                    if obj.name == 'Add_process' and obj.clicked and draggedNode == (-1, -1):
+                        #  Moves cursor to middle of map
+                        mouse.set_pos(475, 360)
+                        #  Creates node object
+                        newNode = Node(475, 360, 6, PROCESS_NODE_STR, WID)
+                        #  Adds node object to render array
+                        objectArr.append(newNode)
+                        #  Setting values to know which node is currently added
+                        newNode.d = True
+                        startWeatherNode = (1, WID)
+                        skipMove = True
+                        Wconnections.append([])
+                        WID += 1
+                        addingWeather = True
+                        pastWeatherUpdate = time.get_ticks()
+                        weatherNode = deepcopy(newNode)
+                        Wconnections.append([])
+
+            #  Adding next and ending
+            if rButtonDown and pastWeatherUpdate <= time.get_ticks() - 300 and type(obj) == Node and obj.d and obj.type == PROCESS_NODE_STR:
+                e = False
+                for ob in objectArr:
+                    if obj != ob and type(ob) == Node and ob.type == PROCESS_NODE_STR and ob.id == startWeatherNode[1] and ob.mouseOver():
+                        addingWeather = False
+                        objectArr.remove(obj)
+                        currentConnection.p[1] = (ob.x + ob.r, ob.y + ob.r)
+                        connection = deepcopy(currentConnection)
+                        objectArr.remove(currentConnection)
+                        objectArr.append(connection)
+                        Wconnections[weatherNode.id].append(ob.id)
+                        Wconnections[ob.id].append(weatherNode.id)
+                        WconnectionsList.append([ob.id, weatherNode.id])
+                        e = True
+                        currentConnection = 0
+                if not e:
+                    obj.d = False
+                    newNode = Node(mx, my, 6, PROCESS_NODE_STR, WID)
+                    #  Adds node object to render array
+                    objectArr.append(newNode)
+                    #  Setting values to know which node is currently added
+                    newNode.d = True
+                    Wconnections.append([])
+                    WID += 1
+                    pastWeatherUpdate = time.get_ticks()
+                    if currentConnection == 0:
+                        currentConnection = Line(newNode.x + newNode.r, newNode.y + newNode.r, mx, my, (73, 104, 235), 2)
+                        objectArr.append(currentConnection)
+                    else:
+                        currentConnection.p[1] = (newNode.x + newNode.r, newNode.y + newNode.r)
+                        connection = deepcopy(currentConnection)
+                        objectArr.remove(currentConnection)
+                        objectArr.append(connection)
+                        currentConnection = Line(newNode.x + newNode.r, newNode.y + newNode.r, mx, my, (73, 104, 235), 2)
+                        objectArr.append(currentConnection)
+                        Wconnections[weatherNode.id].append(newNode.id)
+                        Wconnections[newNode.id].append(weatherNode.id)
+                        WconnectionsList.append([newNode.id, weatherNode.id])
+                        weatherNode = deepcopy(newNode)
+
+            #  -------------------------------------
             #  Deselect node
             if type(obj) == TexturedObject and obj.name == 'Deselect' and obj.clicked:
                 selectedNode = (-1, -1, -1, -1)
                 ib.hide = True
                 nt.hide = True
                 cit.hide = True
+                cin.hide = True
                 for ob in menuArr:
                     if type(ob) == TexturedObject and ob.name == 'Title':
                         ob.hide = False
+
+            #  Handle depth
+            if type(obj) == TexturedObject and obj.name == 'Plus' and obj.clicked and pastDepthUpdate <= time.get_ticks() - 200:
+                depth += 1
+                dph.textUpdate('Depth: ' + str(depth))
+                pastDepthUpdate = time.get_ticks()
+            if type(obj) == TexturedObject and obj.name == 'Minus' and obj.clicked and \
+                    pastDepthUpdate <= time.get_ticks() - 200 and depth > 1:
+                depth -= 1
+                dph.textUpdate('Depth: ' + str(depth))
+                pastDepthUpdate = time.get_ticks()
 
             #  Text
             #  Updates currently selected text
@@ -301,6 +408,7 @@ def main():
             except AttributeError:
                 pass
 
+        #  connecting nodes into components
         if editedGraph:
             global visited
             it = 1

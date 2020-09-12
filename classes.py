@@ -85,6 +85,8 @@ class Node(Entity):
         self.v = startValue
         self.d = False
 
+        if nodeType == BASE_NODE_STR:
+            priority += 50
         self.priority = priority
 
         self.updateColor()
@@ -118,8 +120,8 @@ class Node(Entity):
 class Line:
     def __init__(self, x1, y1, x2, y2, color, width=1):
         self.p = []
-        self.p.append((x1, y1))
-        self.p.append((x2, y2))
+        self.p.append([x1, y1])
+        self.p.append([x2, y2])
 
         self.w = width
 
@@ -127,6 +129,8 @@ class Line:
 
         self.hide = False
         self.priority = -1
+        if color[0] != 0:
+            self.priority -= 1
 
     def render(self, screen, deltaTime):
         pg.draw.line(screen, self.color, self.p[0], self.p[1], self.w)
