@@ -37,6 +37,8 @@ class Entity:
         self.hide = False
 
     def mouseOver(self):
+        if self.hide:
+            return False
         mx, my = pg.mouse.get_pos()
         #  print(mx, my)
 
@@ -186,3 +188,9 @@ class Text(Entity):
 
     def render(self, screen, deltaTime):
         screen.blit(self.textTexture, (self.x, self.y))
+
+
+class CriticalInfrastructure:
+    def __init__(self):
+        self.elements = []
+        self.representative = 0

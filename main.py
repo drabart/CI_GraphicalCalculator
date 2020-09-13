@@ -58,6 +58,8 @@ def loadMenu():
                 arr.append(
                     TexturedObject(rawObjects['textured'][obj][0], rawObjects['textured'][obj][1],
                                    "graphics/" + obj + ".png", obj))
+            if arr[len(arr)-1].name == "Infrastructure" or arr[len(arr)-1].name == "Node":
+                arr[len(arr)-1].hide = True
         del obj
 
     return arr
@@ -66,9 +68,10 @@ def loadMenu():
 visited = {}
 
 
-def ss(w, c, i, oa):
+def ss(w, c, i, oa, ci):
     global visited
     visited[w] = True
+    ci.elements.append(w)
     for ob in oa:
         if type(ob) == Node and ob.type == BASE_NODE_STR and ob.id == w:
             ob.ci = i
@@ -78,64 +81,73 @@ def ss(w, c, i, oa):
                 if visited[a]:
                     pass
             except KeyError:
-                ss(a, c, i, oa)
+                ci = ss(a, c, i, oa, ci)
+    return ci
 
 
 def main():
-    #  initializing pygame
-    init()
-    scr = Screen(800, 600, (0, 0, 0))
-    clock = time.Clock()
+    #  Variables initialization
+    if True:
+        #  initializing pygame
+        init()
+        scr = Screen(800, 600, (0, 0, 0))
+        clock = time.Clock()
 
-    #  array holding all renderable objects
-    menuArr = []
-    objectArr = []
+        #  array holding all renderable objects
+        menuArr = []
+        objectArr = []
 
-    #  loading menu objects
-    menuArr += loadMenu()
+        #  loading menu objects
+        menuArr += loadMenu()
 
-    connections = [[]]
-    connectionsList = []
+        connections = [[]]
+        connectionsList = []
 
-    Wconnections = [[]]
-    WconnectionsList = []
+        Wconnections = [[]]
+        WconnectionsList = []
 
-    mx, my = -1, -1
-    dmx, dmy = 0, 0
-    ID = 1
-    WID = 1
-    pastDepthUpdate = time.get_ticks()
-    pastWeatherUpdate = time.get_ticks()
-    currentConnection = 0
-    weatherNode = 0
-    depth = 1
+        Infrastructures = [[]]
 
-    draggedNode = (-1, -1)  # type, id
-    startWeatherNode = (-1, -1)  # type, id
-    selectedNode = (-1, -1, -1, -1)  # type, id, x, y
+        mx, my = -1, -1
+        dmx, dmy = 0, 0
+        ID = 1
+        WID = 1
+        pastDepthUpdate = time.get_ticks()
+        pastWeatherUpdate = time.get_ticks()
+        currentConnection = 0
+        weatherNode = 0
+        depth = 1
+        inputType = 'N'
 
-    selectedInput = False
-    rButtonDown = False
-    skipMove = False
-    updatedText = False
-    editedGraph = False
-    addingWeather = False
+        draggedNode = (-1, -1)  # type, id
+        startWeatherNode = (-1, -1)  # type, id
+        selectedNode = (-1, -1, -1, -1)  # type, id, x, y
 
-    currentText = ''
-    ib = InputBox(565, 78, 100, 30)
-    ib.hide = True
-    objectArr.append(ib)
-    nt = Text(255, 5, text='Selected Node: ')
-    nt.hide = True
-    menuArr.append(nt)
-    cit = Text(255, 48, text='Node CI: ', size=32)
-    cit.hide = True
-    menuArr.append(cit)
-    cin = Text(255, 83, text='Node lifetime in safety states', size=32)
-    cin.hide = True
-    menuArr.append(cin)
-    dph = Text(255, 127, text='Depth: 1', size=32)
-    menuArr.append(dph)
+        selectedInput = False
+        rButtonDown = False
+        skipMove = False
+        updatedText = False
+        editedGraph = False
+        addingWeather = False
+
+        currentText = ''
+        ib = InputBox(565, 78, 100, 30)
+        ib.hide = True
+        objectArr.append(ib)
+        nt = Text(255, 5, text='Selected asset: ')
+        nt.hide = True
+        menuArr.append(nt)
+        cit = Text(255, 48, text='Node CI: ', size=32)
+        cit.hide = True
+        menuArr.append(cit)
+        cin = Text(255, 83, text='Node lifetime in safety states', size=32)
+        cin.hide = True
+        menuArr.append(cin)
+        dph = Text(255, 127, text='Depth: 1', size=32)
+        menuArr.append(dph)
+        ifd = Text(255, 84, text='How many assets need to work', size=30)
+        ifd.hide = True
+        menuArr.append(ifd)
 
     while 1:
         moved = False
@@ -220,9 +232,14 @@ def main():
                         nt.hide = True
                         cit.hide = True
                         cin.hide = True
+                        ifd.hide = True
                         for ob in menuArr:
                             if type(ob) == TexturedObject and ob.name == 'Title':
                                 ob.hide = False
+                            if type(ob) == TexturedObject and ob.name == 'Infrastructure':
+                                ob.hide = True
+                            if type(ob) == TexturedObject and ob.name == 'Node':
+                                ob.hide = True
                     #  moving dragged node
                     elif obj.d:
                         obj.move(dmx, dmy)
@@ -236,14 +253,23 @@ def main():
                     if obj.type == BASE_NODE_STR and obj.clicked and selectedNode == (-1, -1, -1, -1):
                         selectedNode = (0, obj.id, obj.x, obj.y)
                         ib.hide = False
-                        nt.textUpdate('Selected Node: ' + str(obj.id))
+                        nt.textUpdate('Selected asset: ' + str(obj.id))
                         nt.hide = False
                         cit.textUpdate('Node CI: ' + str(obj.ci))
                         cit.hide = False
-                        cin.hide = False
+                        if inputType == 'N':
+                            cin.hide = False
+                            ifd.hide = True
+                        else:
+                            ifd.hide = False
+                            cin.hide = True
                         for ob in menuArr:
                             if type(ob) == TexturedObject and ob.name == 'Title':
                                 ob.hide = True
+                            if type(ob) == TexturedObject and ob.name == 'Infrastructure':
+                                ob.hide = False
+                            if type(ob) == TexturedObject and ob.name == 'Node':
+                                ob.hide = False
 
                     #  If node is selected and current clicked node is not that one then connects
                     elif obj.type == BASE_NODE_STR and obj.clicked and selectedNode != (0, obj.id, obj.x, obj.y):
@@ -258,9 +284,14 @@ def main():
                             nt.hide = True
                             cit.hide = True
                             cin.hide = True
+                            ifd.hide = True
                             for ob in menuArr:
                                 if type(ob) == TexturedObject and ob.name == 'Title':
                                     ob.hide = False
+                                if type(ob) == TexturedObject and ob.name == 'Infrastructure':
+                                    ob.hide = True
+                                if type(ob) == TexturedObject and ob.name == 'Node':
+                                    ob.hide = True
                             editedGraph = True
                 except AttributeError:
                     pass
@@ -362,9 +393,14 @@ def main():
                 nt.hide = True
                 cit.hide = True
                 cin.hide = True
+                ifd.hide = True
                 for ob in menuArr:
                     if type(ob) == TexturedObject and ob.name == 'Title':
                         ob.hide = False
+                    if type(ob) == TexturedObject and ob.name == 'Infrastructure':
+                        ob.hide = True
+                    if type(ob) == TexturedObject and ob.name == 'Node':
+                        ob.hide = True
 
             #  Handle depth
             if type(obj) == TexturedObject and obj.name == 'Plus' and obj.clicked and pastDepthUpdate <= time.get_ticks() - 200:
@@ -376,6 +412,16 @@ def main():
                 depth -= 1
                 dph.textUpdate('Depth: ' + str(depth))
                 pastDepthUpdate = time.get_ticks()
+
+            #  Change input type
+            if type(obj) == TexturedObject and obj.name == 'Node' and obj.clicked:
+                cin.hide = False
+                ifd.hide = True
+                inputType = 'N'
+            if type(obj) == TexturedObject and obj.name == 'Infrastructure' and obj.clicked:
+                cin.hide = True
+                ifd.hide = False
+                inputType = 'I'
 
             #  Text
             #  Updates currently selected text
@@ -412,12 +458,15 @@ def main():
         if editedGraph:
             global visited
             it = 1
+            Infrastructures[depth-1] = []
             for x in range(1, ID):
                 try:
                     if visited[x]:
                         pass
                 except KeyError:
-                    ss(x, connections, it, objectArr)
+                    ci = CriticalInfrastructure()
+                    ci.representative = x
+                    Infrastructures[depth-1].append(ss(x, connections, it, objectArr, ci))
                     it += 1
             visited = {}
             editedGraph = False
