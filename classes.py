@@ -76,6 +76,9 @@ class Node(Entity):
     def __init__(self, positionX, positionY, radius, nodeType, nodeID, priority=0, startValue=100):
         super().__init__(positionX-radius, positionY-radius, radius*2, radius*2)
 
+        if nodeType == BASE_NODE_STR:
+            self.font = pg.font.Font("arial-unicode-ms.ttf", 18)
+            self.textTexture = self.font.render('', True, (0, 0, 0))
         self.id = nodeID
         self.ci = self.id
         self.r = radius
@@ -116,7 +119,20 @@ class Node(Entity):
 
     def render(self, screen, deltaTime):
         self.update()
-        pg.draw.circle(screen, self.color, (self.x+self.r, self.y+self.r), self.r)
+        if self.type == BASE_NODE_STR:
+            pg.draw.circle(screen, self.color, (self.x+self.r, self.y+self.r), self.r, 2)
+            s = ''
+            a = 8320
+            mod = 10
+            for x in range(len(str(self.id))):
+                a = int(8320 + (self.id % mod - self.id % (mod/10)) / (mod/10))
+                s = chr(a) + s
+                mod *= 10
+            s = 'A' + s
+            self.textTexture = self.font.render(s, True, (0, 0, 0))
+            screen.blit(self.textTexture, (self.x + 15, self.y + 10))
+        else:
+            pg.draw.circle(screen, self.color, (self.x + self.r, self.y + self.r), self.r)
 
 
 class Line:
