@@ -80,12 +80,13 @@ class Node(Entity):
             self.font = pg.font.Font("arial-unicode-ms.ttf", 18)
             self.textTexture = self.font.render('', True, (0, 0, 0))
         self.id = nodeID
-        self.ci = self.id
+        self.ci = []
         self.r = radius
 
         self.type = nodeType
 
         self.color = 0, 0, 0
+        self.ciid = 0
 
         self.v = startValue
         self.d = False
@@ -101,7 +102,9 @@ class Node(Entity):
 
     def updateColor(self):
         if self.type == BASE_NODE_STR:
-            if self.v >= self.maxScale:
+            if self.ciid in self.ci:
+                self.color = 0, 0, 50
+            elif self.v >= self.maxScale:
                 self.color = 0, 200, 0
             elif self.minScale < self.v < self.maxScale:
                 b1 = self.maxScale - (self.maxScale - self.minScale) / 3

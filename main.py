@@ -51,7 +51,7 @@ def loadMenu():
                 arr.append(
                     TexturedObject(rawObjects['textured'][obj][0], rawObjects['textured'][obj][1],
                                    "graphics/" + obj + ".png", obj))
-            if arr[len(arr)-1].name == "Infrastructure" or arr[len(arr)-1].name == "Node":
+            if arr[len(arr)-1].name == "Exit" or arr[len(arr)-1].name == "Node":
                 arr[len(arr)-1].hide = True
         del obj
 
@@ -236,10 +236,14 @@ def main():
                     for ob in menuArr:
                         if type(ob) == TexturedObject and ob.name == 'Title':
                             ob.hide = True
-                        if type(ob) == TexturedObject and ob.name == 'Infrastructure':
+                        if type(ob) == TexturedObject and ob.name == 'Exit':
                             ob.hide = False
                         if type(ob) == TexturedObject and ob.name == 'Node':
                             ob.hide = False
+                    for ob in objectArr:
+                        if type(ob) == Node and ob.type == BASE_NODE_STR:
+                            ob.ciid = ID
+                            ob.updateColor()
                     NID = 1
 
             #  -------------------------------------
@@ -332,6 +336,17 @@ def main():
                         ob.hide = True
             '''
 
+            if type(obj) == Node and obj.clicked and draggedNode == (-1, -1):
+                if obj not in Infrastructures[ID].elements:
+                    Infrastructures[ID].elements.append(obj)
+                    obj.ci.append(ID)
+                    obj.updateColor()
+                    addingNodes = False
+                    ib.hide = False
+                    editingNode = True
+                    ant.hide = True
+                    alt.hide = False
+
             #  Change input type
             if type(obj) == TexturedObject and obj.name == 'Node' and obj.clicked and ln <= time.get_ticks() - 300:
                 if editingSSN:
@@ -368,6 +383,9 @@ def main():
                     #  Creates node object
                     newNode = Node(475, 360, 24, BASE_NODE_STR, NID)
                     #  Adds node object to render array
+                    newNode.ci.append(ID)
+                    newNode.ciid = ID
+                    newNode.updateColor()
                     objectArr.append(newNode)
                     #  Setting values to know which node is currently added
                     Infrastructures[ID].elements.append(newNode)
@@ -377,7 +395,7 @@ def main():
                     NID += 1
                 ln = time.get_ticks()
             # redo to exit
-            if type(obj) == TexturedObject and obj.name == 'Infrastructure' and obj.clicked:
+            if type(obj) == TexturedObject and obj.name == 'Exit' and obj.clicked:
                 if len(Infrastructures[ID].elements):
                     ID += 1
                 else:
@@ -393,7 +411,7 @@ def main():
                 for ob in menuArr:
                     if type(ob) == TexturedObject and ob.name == 'Title':
                         ob.hide = False
-                    if type(ob) == TexturedObject and ob.name == 'Infrastructure':
+                    if type(ob) == TexturedObject and ob.name == 'Exit':
                         ob.hide = True
                     if type(ob) == TexturedObject and ob.name == 'Node':
                         ob.hide = True
@@ -404,6 +422,10 @@ def main():
                 addingNodes = False
                 editingNode = False
                 new = False
+                for ob in objectArr:
+                    if type(ob) == Node and ob.type == BASE_NODE_STR:
+                        ob.ciid = 0
+                        ob.updateColor()
 
             if True:
                 #  Text
