@@ -23,6 +23,7 @@ class Screen:
         for obj in objects:
             # obj.mouseOver()
             if not obj.hide:
+
                 obj.render(self.screen, deltaTime)
 
 
@@ -90,6 +91,7 @@ class Node(Entity):
 
         self.v = startValue
         self.d = False
+        self.width = 2
 
         if nodeType == BASE_NODE_STR:
             priority += 50
@@ -123,9 +125,15 @@ class Node(Entity):
     def render(self, screen, deltaTime):
         self.update()
         if self.type == BASE_NODE_STR:
-            pg.draw.circle(screen, self.color, (self.x+self.r, self.y+self.r), self.r, 2)
+            circle = pg.Surface([self.r * 2 + self.width, self.r * 2 + self.width]).convert_alpha()
+            circle.fill([0, 0, 0, 0])
+            pg.draw.circle(circle, self.color, (int(circle.get_width() / 2), int(circle.get_height() / 2)),
+                               int(self.r + (self.width / 2)))
+            if int(self.r - (self.width / 2)) > 0:
+                pg.draw.circle(circle, [0, 0, 0, 0], (int(circle.get_width() / 2), int(circle.get_height() / 2)), abs(int(self.r - (self.width / 2))))
+            screen.blit(circle, (int(self.x), int(self.y)))
+            # pg.draw.circle(screen, self.color, (self.x+self.r, self.y+self.r), self.r, self.width)
             s = ''
-            a = 8320
             mod = 10
             for x in range(len(str(self.id))):
                 a = int(8320 + (self.id % mod - self.id % (mod/10)) / (mod/10))
@@ -133,7 +141,7 @@ class Node(Entity):
                 mod *= 10
             s = 'A' + s
             self.textTexture = self.font.render(s, True, (0, 0, 0))
-            screen.blit(self.textTexture, (self.x + 15, self.y + 10))
+            screen.blit(self.textTexture, (self.x + 16, self.y + 11))
         else:
             pg.draw.circle(screen, self.color, (self.x + self.r, self.y + self.r), self.r)
 

@@ -4,7 +4,7 @@ from classes import *
 from constants import *
 from pygame import *
 from sys import exit
-from copy import deepcopy
+# from copy import deepcopy
 
 
 def loadNodes(file):
@@ -73,8 +73,8 @@ def main():
         #  loading menu objects
         menuArr += loadMenu()
 
-        Wconnections = [[]]
-        WconnectionsList = []
+        # Wconnections = [[]]
+        # WconnectionsList = []
 
         Infrastructures = [0]
 
@@ -82,14 +82,15 @@ def main():
         dmx, dmy = 0, 0
         ID = 1
         NID = 1
-        WID = 1
-        pastWeatherUpdate = time.get_ticks()
+        non_hidden = 0
+        # WID = 1
+        # pastWeatherUpdate = time.get_ticks()
         ln = time.get_ticks()
-        currentConnection = 0
-        weatherNode = 0
+        # currentConnection = 0
+        # weatherNode = 0
 
         draggedNode = (-1, -1)  # type, id
-        startWeatherNode = (-1, -1)  # type, id
+        # startWeatherNode = (-1, -1)  # type, id
 
         selectedInput = False
         rButtonDown = False
@@ -102,12 +103,13 @@ def main():
         editingNTW = False
         addingNodes = False
         editingNode = False
+        naming = False
         new = False
 
         currentText = ''
         ib = InputBox(565, 78, 100, 30)
         ib.hide = True
-        objectArr.append(ib)
+        menuArr.append(ib)
         cit = Text(255, 5, text='Critical Infrastructure  ', size=32)
         cit.hide = True
         menuArr.append(cit)
@@ -126,9 +128,20 @@ def main():
         ant = Text(255, 84, text='Add new node', size=30)
         ant.hide = True
         menuArr.append(ant)
+        snn = Text(255, 84, text='Select new node', size=30)
+        snn.hide = True
+        menuArr.append(snn)
         alt = Text(255, 84, text='Asset lifetimes in safety states', size=30)
         alt.hide = True
         menuArr.append(alt)
+        nst = Text(255, 5, text='Name new scenario', size=48)
+        nst.hide = True
+        menuArr.append(nst)
+
+        for obj in menuArr:
+            if type(obj) == TexturedObject:
+                if obj.name == 'Edit' or obj.name == 'Add_CI' or obj.name == 'Add_process':
+                    obj.hide = True
 
     while 1:
         moved = False
@@ -206,10 +219,12 @@ def main():
                     #  'undragging' dragged node
                     if obj.d and draggedNode == (-1, -1):
                         obj.d = False
-                        ib.hide = False
-                        addingNodes = False
-                        editingNode = True
-                        alt.hide = False
+                        if ID > 1:
+                            ib.hide = False
+                            editingNode = True
+                            alt.hide = False
+                        else:
+                            ant.hide = False
                     #  moving dragged node
                     elif obj.d:
                         obj.move(dmx, dmy)
@@ -219,137 +234,83 @@ def main():
             #  Adding CI
             if type(obj) == TexturedObject:
                 #  Checking if 'Add_node' button is clicked and no node is added right then
-                if obj.name == 'Add_CI' and obj.clicked and not new:
-                    ci = CriticalInfrastructure()
-                    Infrastructures.append(ci)
-                    new = True
-                    editingSSN = True
-                    ib.hide = False
-                    cit.textUpdate('Critical Infrastructure  ' + str(ID))
-                    cit.hide = False
-                    cin.hide = False
-                    plt.hide = True
-                    srt.hide = True
-                    ntwt.hide = True
-                    ant.hide = True
-                    alt.hide = True
-                    for ob in menuArr:
-                        if type(ob) == TexturedObject and ob.name == 'Title':
-                            ob.hide = True
-                        if type(ob) == TexturedObject and ob.name == 'Exit':
-                            ob.hide = False
-                        if type(ob) == TexturedObject and ob.name == 'Node':
-                            ob.hide = False
-                    for ob in objectArr:
-                        if type(ob) == Node and ob.type == BASE_NODE_STR:
-                            ob.ciid = ID
-                            ob.updateColor()
-                    NID = 1
+                if obj.name == 'Add_CI' and obj.clicked and not new and not naming:
+                    if ID > 1:
+                        ci = CriticalInfrastructure()
+                        Infrastructures.append(ci)
+                        new = True
+                        editingSSN = True
+                        ib.hide = False
+                        cit.textUpdate('Critical Infrastructure  ' + str(ID))
+                        cit.hide = False
+                        cin.hide = False
+                        plt.hide = True
+                        srt.hide = True
+                        ntwt.hide = True
+                        ant.hide = True
+                        alt.hide = True
+                        for ob in menuArr:
+                            if type(ob) == TexturedObject and ob.name == 'Title':
+                                ob.hide = True
+                            if type(ob) == TexturedObject and ob.name == 'Exit':
+                                ob.hide = False
+                            if type(ob) == TexturedObject and ob.name == 'Node':
+                                ob.hide = False
+                        for ob in objectArr:
+                            if type(ob) == Node and ob.type == BASE_NODE_STR:
+                                ob.ciid = ID
+                                ob.updateColor()
+                        NID = 1
+                    else:
+                        ci = CriticalInfrastructure()
+                        Infrastructures.append(ci)
+                        ib.hide = True
+                        ant.hide = False
+                        addingNodes = True
+                        editingNode = False
+                        alt.hide = True
+                        new = True
+                        cit.textUpdate('Critical Infrastructure  ' + str(ID))
+                        plt.hide = True
+                        srt.hide = True
+                        ntwt.hide = True
+                        for ob in menuArr:
+                            if type(ob) == TexturedObject and ob.name == 'Title':
+                                ob.hide = True
+                            if type(ob) == TexturedObject and ob.name == 'Exit':
+                                ob.hide = False
+                            if type(ob) == TexturedObject and ob.name == 'Node':
+                                ob.hide = False
+                        for ob in objectArr:
+                            if type(ob) == Node and ob.type == BASE_NODE_STR:
+                                ob.ciid = ID
+                                ob.updateColor()
+                        NID = 1
 
-            #  -------------------------------------
-            #  Adding weather process
-            #  Moving node
-            if True:
-                if addingWeather and type(obj) == Node and obj.d and obj.type == PROCESS_NODE_STR:
-                    obj.move(dmx, dmy)
-                    if currentConnection != 0:
-                        currentConnection.p[1][0] += dmx
-                        currentConnection.p[1][1] += dmy
-
-                #  Adding first
-                if not addingWeather and not new:
-                    if type(obj) == TexturedObject:
-                        #  Checking if 'Add_process' button is clicked
-                        if obj.name == 'Add_process' and obj.clicked and draggedNode == (-1, -1):
-                            #  Moves cursor to middle of map
-                            mouse.set_pos(475, 360)
-                            #  Creates node object
-                            newNode = Node(475, 360, 6, PROCESS_NODE_STR, WID)
-                            #  Adds node object to render array
-                            objectArr.append(newNode)
-                            #  Setting values to know which node is currently added
-                            newNode.d = True
-                            startWeatherNode = (1, WID)
-                            skipMove = True
-                            Wconnections.append([])
-                            WID += 1
-                            addingWeather = True
-                            pastWeatherUpdate = time.get_ticks()
-                            weatherNode = deepcopy(newNode)
-                            Wconnections.append([])
-
-                #  Adding next and ending
-                elif rButtonDown and pastWeatherUpdate <= time.get_ticks() - 300 and type(obj) == Node and obj.d and obj.type == PROCESS_NODE_STR:
-                    e = False
-                    for ob in objectArr:
-                        if obj != ob and type(ob) == Node and ob.type == PROCESS_NODE_STR and ob.id == startWeatherNode[1] and ob.mouseOver():
-                            addingWeather = False
-                            objectArr.remove(obj)
-                            currentConnection.p[1] = (ob.x + ob.r, ob.y + ob.r)
-                            connection = deepcopy(currentConnection)
-                            objectArr.remove(currentConnection)
-                            objectArr.append(connection)
-                            Wconnections[weatherNode.id].append(ob.id)
-                            Wconnections[ob.id].append(weatherNode.id)
-                            WconnectionsList.append([ob.id, weatherNode.id])
-                            e = True
-                            currentConnection = 0
-                    if not e:
-                        obj.d = False
-                        newNode = Node(mx, my, 6, PROCESS_NODE_STR, WID)
-                        #  Adds node object to render array
-                        objectArr.append(newNode)
-                        #  Setting values to know which node is currently added
-                        newNode.d = True
-                        Wconnections.append([])
-                        WID += 1
-                        pastWeatherUpdate = time.get_ticks()
-                        if currentConnection == 0:
-                            currentConnection = Line(newNode.x + newNode.r, newNode.y + newNode.r, mx, my, (73, 104, 235), 2)
-                            objectArr.append(currentConnection)
-                        else:
-                            currentConnection.p[1] = (newNode.x + newNode.r, newNode.y + newNode.r)
-                            connection = deepcopy(currentConnection)
-                            objectArr.remove(currentConnection)
-                            objectArr.append(connection)
-                            currentConnection = Line(newNode.x + newNode.r, newNode.y + newNode.r, mx, my, (73, 104, 235), 2)
-                            objectArr.append(currentConnection)
-                            Wconnections[weatherNode.id].append(newNode.id)
-                            Wconnections[newNode.id].append(weatherNode.id)
-                            WconnectionsList.append([newNode.id, weatherNode.id])
-                            weatherNode = deepcopy(newNode)
-
-            #  -------------------------------------
-            #  Deselect node
-            '''
-            if type(obj) == TexturedObject and obj.name == 'Deselect' and obj.clicked:
-                ib.hide = True
-                cit.hide = True
-                cin.hide = True
-                ifd.hide = True
-                for ob in menuArr:
-                    if type(ob) == TexturedObject and ob.name == 'Title':
-                        ob.hide = False
-                    if type(ob) == TexturedObject and ob.name == 'Infrastructure':
-                        ob.hide = True
-                    if type(ob) == TexturedObject and ob.name == 'Node':
-                        ob.hide = True
-            '''
-
-            if type(obj) == Node and obj.clicked and draggedNode == (-1, -1):
-                if obj not in Infrastructures[ID].elements:
+            if type(obj) == Node and obj.clicked and draggedNode == (-1, -1) and addingNodes:
+                if obj not in Infrastructures[ID].elements and ID > 1:
                     Infrastructures[ID].elements.append(obj)
                     obj.ci.append(ID)
                     obj.updateColor()
-                    addingNodes = False
                     ib.hide = False
                     editingNode = True
-                    ant.hide = True
+                    addingNodes = False
+                    snn.hide = True
                     alt.hide = False
 
             #  Change input type
             if type(obj) == TexturedObject and obj.name == 'Node' and obj.clicked and ln <= time.get_ticks() - 300:
-                if editingSSN:
+                if naming:
+                    for ob in menuArr:
+                        if type(ob) == TexturedObject:
+                            if ob.name == 'Edit' or ob.name == 'Add_CI' or ob.name == 'Add_process' or ob.name == 'Title':
+                                ob.hide = False
+                            if ob.name == 'Exit' or ob.name == 'Node':
+                                ob.hide = True
+                    nst.hide = True
+                    ib.hide = True
+                    naming = False
+                elif editingSSN:
                     editingSSN = False
                     editingPN = True
                     cin.hide = True
@@ -368,15 +329,22 @@ def main():
                     editingNTW = False
                     addingNodes = True
                     ntwt.hide = True
-                    ant.hide = False
+                    if ID > 1:
+                        snn.hide = False
+                    else:
+                        ant.hide = False
                     ib.hide = True
                 elif editingNode:
                     ib.hide = True
-                    ant.hide = False
-                    addingNodes = True
                     editingNode = False
-                    alt.hide = True
-                elif addingNodes and draggedNode == (-1, -1):
+                    addingNodes = True
+                    if ID == 1:
+                        ant.hide = False
+                        alt.hide = True
+                    else:
+                        snn.hide = False
+                        alt.hide = True
+                elif addingNodes and draggedNode == (-1, -1) and ID == 1:
                     ant.hide = True
                     #  Moves cursor to middle of map
                     mouse.set_pos(475, 360)
@@ -394,38 +362,52 @@ def main():
                     skipMove = True
                     NID += 1
                 ln = time.get_ticks()
-            # redo to exit
-            if type(obj) == TexturedObject and obj.name == 'Exit' and obj.clicked:
-                if len(Infrastructures[ID].elements):
-                    ID += 1
-                else:
-                    Infrastructures.pop(len(Infrastructures)-1)
-                ib.hide = True
-                cit.hide = True
-                cin.hide = True
-                plt.hide = True
-                srt.hide = True
-                ntwt.hide = True
-                ant.hide = True
-                alt.hide = True
-                for ob in menuArr:
-                    if type(ob) == TexturedObject and ob.name == 'Title':
-                        ob.hide = False
-                    if type(ob) == TexturedObject and ob.name == 'Exit':
-                        ob.hide = True
-                    if type(ob) == TexturedObject and ob.name == 'Node':
-                        ob.hide = True
-                editingSSN = False
-                editingPN = False
-                editingSR = False
-                editingNTW = False
-                addingNodes = False
-                editingNode = False
-                new = False
-                for ob in objectArr:
-                    if type(ob) == Node and ob.type == BASE_NODE_STR:
-                        ob.ciid = 0
-                        ob.updateColor()
+            if type(obj) == TexturedObject and obj.name == 'Exit' and obj.clicked and not addingWeather:
+                if not naming:
+                    if len(Infrastructures[ID].elements):
+                        if ID > 1:
+                            Infrastructures[ID].representative = Infrastructures[ID].elements[0]
+                            for ob in Infrastructures[ID].elements:
+                                if ob != Infrastructures[ID].representative:
+                                    ob.hide = True
+                                    non_hidden -= 1
+                        else:
+                            non_hidden = len(Infrastructures[ID].elements)
+                        if non_hidden == 1:
+                            addingWeather = True
+                            for ob in objectArr:
+                                if type(ob) == Node:
+                                    ob.hide = False
+                        ID += 1
+                    else:
+                        Infrastructures.pop(len(Infrastructures)-1)
+                    ib.hide = True
+                    cit.hide = True
+                    cin.hide = True
+                    plt.hide = True
+                    srt.hide = True
+                    ntwt.hide = True
+                    ant.hide = True
+                    alt.hide = True
+                    snn.hide = True
+                    for ob in menuArr:
+                        if type(ob) == TexturedObject and ob.name == 'Title':
+                            ob.hide = False
+                        if type(ob) == TexturedObject and ob.name == 'Exit':
+                            ob.hide = True
+                        if type(ob) == TexturedObject and ob.name == 'Node':
+                            ob.hide = True
+                    editingSSN = False
+                    editingPN = False
+                    editingSR = False
+                    editingNTW = False
+                    addingNodes = False
+                    editingNode = False
+                    new = False
+                    for ob in objectArr:
+                        if type(ob) == Node and ob.type == BASE_NODE_STR:
+                            ob.ciid = 0
+                            ob.updateColor()
 
             if True:
                 #  Text
@@ -435,6 +417,7 @@ def main():
                         obj.textUpdate(currentText)
                         updatedText = False
 
+                '''
                 #  Load
                 try:
                     if obj.name == 'Load' and obj.clicked:
@@ -445,19 +428,21 @@ def main():
                             objectArr = []
                 except AttributeError:
                     pass
+                '''
 
-                #  Save
-                try:
-                    if obj.clicked and obj.name == 'Save':
-                        print('hi')
-                        a = {'nodes': []}
-                        for ob in objectArr:
-                            if type(ob) == Node:
-                                a['nodes'].append([ob.x, ob.y, ob.type, ob.id, ob.v])
-                        with open('save1.json', 'w') as F:
-                            F.write(json.dumps(a))
-                except AttributeError:
-                    pass
+                #  New
+                if type(obj) == TexturedObject:
+                    if obj.clicked and obj.name == 'New' and not new and not naming:
+                        objectArr = []
+                        nst.hide = False
+                        ib.hide = False
+                        for ob in menuArr:
+                            if type(ob) == TexturedObject:
+                                if ob.name == 'Exit' or ob.name == 'Node':
+                                    ob.hide = False
+                                if ob.name == 'Title':
+                                    ob.hide = True
+                        naming = True
 
         #  Updating screen
         dt = clock.tick(60)
