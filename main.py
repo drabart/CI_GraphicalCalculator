@@ -83,7 +83,8 @@ def main():
         ID = 1
         NID = 1
         non_hidden = 0
-        # WID = 1
+        WID = 1
+        CurrentWeatherProcess = 0
         # pastWeatherUpdate = time.get_ticks()
         ln = time.get_ticks()
         # currentConnection = 0
@@ -103,6 +104,8 @@ def main():
         editingNTW = False
         addingNodes = False
         editingNode = False
+        settingFirst = False
+        settingSecond = False
         naming = False
         new = False
 
@@ -151,6 +154,16 @@ def main():
             if eve.type == MOUSEBUTTONDOWN:
                 if eve.button == 1:
                     rButtonDown = True
+                x, y = pg.mouse.get_pos()
+                if settingFirst and x > 250 and y > 120:
+                    CurrentWeatherProcess = WeatherProcess(x, y, 0, 0)
+                    objectArr.append(CurrentWeatherProcess)
+                    settingSecond = True
+                    settingFirst = False
+                elif settingSecond:
+                    CurrentWeatherProcess.countNodes(objectArr)
+                    CurrentWeatherProcess = 0
+                    settingSecond = False
             if eve.type == MOUSEBUTTONUP:
                 if eve.button == 1:
                     rButtonDown = False
@@ -158,13 +171,18 @@ def main():
                     draggedNode = (-1, -1)
             if eve.type == MOUSEMOTION:
                 x, y = eve.pos
-                if draggedNode != (-1, -1) or addingWeather:
+                if CurrentWeatherProcess:
+                    if eve.pos[0] < CurrentWeatherProcess.x:
+                        x = CurrentWeatherProcess.x
+                    if eve.pos[1] < CurrentWeatherProcess.y:
+                        y = CurrentWeatherProcess.y
+                    CurrentWeatherProcess.update(x, y)
+                if draggedNode != (-1, -1):
                     if eve.pos[0] < 250:
                         x = 250
                     if eve.pos[1] < 120:
                         y = 120
                     mouse.set_pos(x, y)
-
                 dmx = x - mx
                 dmy = y - my
                 mx, my = x, y
@@ -187,7 +205,7 @@ def main():
 
         for obj in menuArr + objectArr:
             #  Click check
-            if not addingWeather:
+            if True:
                 try:
                     #  Check for 'InputBoxes' to be unselected
                     if not obj.mouseOver() and rButtonDown:
@@ -303,7 +321,7 @@ def main():
                 if naming:
                     for ob in menuArr:
                         if type(ob) == TexturedObject:
-                            if ob.name == 'Edit' or ob.name == 'Add_CI' or ob.name == 'Add_process' or ob.name == 'Title':
+                            if ob.name == 'Edit' or ob.name == 'Add_CI' or ob.name == 'Title':
                                 ob.hide = False
                             if ob.name == 'Exit' or ob.name == 'Node':
                                 ob.hide = True
@@ -378,6 +396,12 @@ def main():
                             for ob in objectArr:
                                 if type(ob) == Node:
                                     ob.hide = False
+                            for ob in menuArr:
+                                if type(ob) == TexturedObject:
+                                    if ob.name == 'Add_process':
+                                        ob.hide = False
+                                    if ob.name == 'Add_CI':
+                                        ob.hide = True
                         ID += 1
                     else:
                         Infrastructures.pop(len(Infrastructures)-1)
@@ -408,6 +432,10 @@ def main():
                         if type(ob) == Node and ob.type == BASE_NODE_STR:
                             ob.ciid = 0
                             ob.updateColor()
+
+            # Weather processes
+            if type(obj) == TexturedObject and obj.name == 'Add_process' and obj.clicked and addingWeather and not settingFirst:
+                settingFirst = True
 
             if True:
                 #  Text

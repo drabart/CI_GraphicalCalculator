@@ -221,3 +221,37 @@ class CriticalInfrastructure:
     def __init__(self):
         self.elements = []
         self.representative = 0
+
+
+class WeatherProcess(Entity):
+    def __init__(self, positionX, positionY, width, height):
+        super().__init__(positionX, positionY, width, height)
+
+        self.nodesInside = []
+        self.priority = 1000
+
+    def countNodes(self, objectArr):
+        for obj in objectArr:
+            if type(objectArr) == Node:
+                if self.rect.collidedict(obj.rect):
+                    self.nodesInside.append(obj)
+
+    def update(self, positionX, positionY):
+        x, y = pg.mouse.get_pos()
+        self.w = positionX - self.x
+        if self.w < 0:
+            pg.mouse.set_pos(self.x, y)
+            x = self.x
+            self.w = 0
+        self.h = positionY - self.y
+        if self.h < 0:
+            pg.mouse.set_pos(x, self.y)
+            self.h = 0
+        self.rect.w = self.w
+        self.rect.h = self.h
+
+    def render(self, screen, deltaTime):
+        s = pg.Surface((self.w, self.h))
+        s.set_alpha(64)
+        s.fill((22, 188, 255))
+        screen.blit(s, (self.x, self.y))
